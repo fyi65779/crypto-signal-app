@@ -96,7 +96,7 @@ def main():
     st.write("🔄 Real-time data from CoinGecko")
 
     if st.button("🔁 Refresh"):
-        st.experimental_rerun()
+        st.rerun()  # ✅ Fixed here
 
     if not is_connected():
         st.error("❌ Internet connection nahi hai. Please check and try again.")
