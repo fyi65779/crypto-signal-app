@@ -9,7 +9,8 @@ def is_connected():
     except requests.ConnectionError:
         return False
 
-# Original functions (no changes)
+# Cached top coin fetcher
+@st.cache_data(ttl=120)  # Cache for 2 minutes
 def fetch_top_coins(limit=30):
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
@@ -36,10 +37,18 @@ def fetch_top_coins(limit=30):
                 coins.append(zerebro)
 
         return coins
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            st.error("❌ CoinGecko ka rate limit exceed hogaya. Thori dair baad try karein.")
+        else:
+            st.error(f"❌ Error fetching coins: {e}")
+        return []
     except Exception as e:
-        st.error(f"❌ Error fetching coins: {e}")
+        st.error(f"❌ Unknown error fetching coins: {e}")
         return []
 
+# Cached individual coin fetcher
+@st.cache_data(ttl=120)
 def fetch_specific_coin(coin_id):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
     try:
@@ -96,7 +105,7 @@ def main():
     st.write("🔄 Real-time data from CoinGecko")
 
     if st.button("🔁 Refresh"):
-        st.rerun()  # ✅ Fixed here
+        st.rerun()  # Updated for latest Streamlit
 
     if not is_connected():
         st.error("❌ Internet connection nahi hai. Please check and try again.")
