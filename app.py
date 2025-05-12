@@ -1,6 +1,13 @@
 import streamlit as st
 import requests
 
+def is_connected():
+    try:
+        requests.get("https://www.google.com", timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+
 def fetch_top_coins(limit=30):
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
@@ -18,11 +25,15 @@ def fetch_top_coins(limit=30):
 
         # Add TRUMP
         if not any(c['symbol'].lower() == 'trump' for c in coins):
-            coins.append(fetch_specific_coin("official-trump"))
+            extra = fetch_specific_coin("official-trump")
+            if extra:
+                coins.append(extra)
 
         # Add ZEREBRO
         if not any(c['symbol'].lower() == 'zerebro' for c in coins):
-            coins.append(fetch_specific_coin("zerebro"))
+            extra = fetch_specific_coin("zerebro")
+            if extra:
+                coins.append(extra)
 
         return coins
     except Exception as e:
@@ -84,10 +95,21 @@ def generate_signal(coin):
 st.set_page_config(page_title="Crypto Signal Generator", layout="centered")
 st.title("📊 Crypto Signal Generator")
 
+if not is_connected():
+    st.error("🚫 Internet connection nahi hai. Please try again.")
+    st.stop()
+
+if st.button("🔄 Refresh Data"):
+    st.experimental_rerun()
+
 st.write("Roman Urdu mein signal dekhne ke liye coin select karein.")
 
 coins = fetch_top_coins()
-coin_names = [f"{c['symbol'].upper()} - ${c['current_price']}" for c in coins]
+coin_names = [f"{c['symbol'].upper()} - ${c['current_price']}" for c in coins if c]
+
+if not coin_names:
+    st.warning("Koi coin data available nahi hai.")
+    st.stop()
 
 selected_index = st.selectbox("Select a coin:", range(len(coin_names)), format_func=lambda x: coin_names[x])
 selected_coin = coins[selected_index]
